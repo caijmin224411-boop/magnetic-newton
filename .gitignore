@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+magnetic_cradle_runs/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.csv
+*.png
+
+.DS_Store
+Thumbs.db
