@@ -58,11 +58,56 @@ class CamShiftPendulumTracker:
         self.max_angle_rad = math.radians(78.0)
 
         hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        self.target_hsv, self.hue_tol, self.sat_tol, self.val_tol, self.track_white = self._learn_color_profile(hsv_roi)
         mask = cv2.inRange(hsv_roi, (0, 25, 35), (179, 255, 255))
         hist = cv2.calcHist([hsv_roi], [0, 1], mask, [36, 32], [0, 180, 0, 256])
         cv2.normalize(hist, hist, 0, 255, cv2.NORM_MINMAX)
         self.hist = hist
         self.term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 12, 1)
+
+    def _learn_color_profile(self, hsv_roi):
+        pixels = hsv_roi.reshape(-1, 3)
+        saturated = pixels[(pixels[:, 1] >= 45) & (pixels[:, 2] >= 45)]
+        if len(saturated) >= max(8, len(pixels) * 0.08):
+            sample = saturated
+            track_white = False
+        else:
+            bright = pixels[(pixels[:, 1] <= 80) & (pixels[:, 2] >= 120)]
+            sample = bright if len(bright) >= 6 else pixels
+            track_white = True
+
+        target = np.median(sample, axis=0).astype(np.float32)
+        spread = np.std(sample.astype(np.float32), axis=0)
+
+        if track_white:
+            hue_tol = 90
+            sat_tol = max(35, int(spread[1] * 2.5 + 20))
+            val_tol = max(45, int(spread[2] * 2.5 + 25))
+        else:
+            hue_tol = max(8, min(22, int(spread[0] * 2.5 + 8)))
+            sat_tol = max(45, min(110, int(spread[1] * 2.5 + 35)))
+            val_tol = max(55, min(130, int(spread[2] * 2.5 + 45)))
+        return target, hue_tol, sat_tol, val_tol, track_white
+
+    def _color_mask(self, hsv_region):
+        h = hsv_region[:, :, 0].astype(np.int16)
+        s = hsv_region[:, :, 1].astype(np.int16)
+        v = hsv_region[:, :, 2].astype(np.int16)
+        th, ts, tv = self.target_hsv.astype(np.int16)
+
+        if self.track_white:
+            mask = (s <= max(95, ts + self.sat_tol)) & (v >= max(80, tv - self.val_tol))
+        else:
+            hue_delta = np.abs(h - th)
+            hue_delta = np.minimum(hue_delta, 180 - hue_delta)
+            mask = (
+                (hue_delta <= self.hue_tol)
+                & (np.abs(s - ts) <= self.sat_tol)
+                & (np.abs(v - tv) <= self.val_tol)
+                & (s >= max(35, ts - self.sat_tol))
+                & (v >= max(35, tv - self.val_tol))
+            )
+        return mask.astype(np.uint8) * 255
 
     def _search_bounds(self, frame_shape):
         h, w = frame_shape[:2]
@@ -122,6 +167,29 @@ class CamShiftPendulumTracker:
             confidence=float(confidence),
         )
 
+    def _best_component_from_mask(self, mask, sx1, sy1):
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        mask = cv2.dilate(mask, np.ones((3, 3), np.uint8), iterations=1)
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
+        best = None
+        predicted = self.last_center or self.initial_center
+
+        for label in range(1, num_labels):
+            area = int(stats[label, cv2.CC_STAT_AREA])
+            if area < 5:
+                continue
+            local_cx, local_cy = centroids[label]
+            cx = float(local_cx + sx1)
+            cy = float(local_cy + sy1)
+            distance_penalty = 0.04 * math.hypot(cx - predicted[0], cy - predicted[1])
+            radius_penalty = 0.025 * abs(
+                math.hypot(cx - self.config.pivot_x, cy - self.config.pivot_y) - self.length_px
+            )
+            score = area - distance_penalty - radius_penalty
+            if best is None or score > best[0]:
+                best = (score, cx, cy, min(1.0, area / 80.0))
+        return best
+
     def update(self, frame, frame_idx, time_s):
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         back_proj = cv2.calcBackProject([hsv], [0, 1], self.hist, [0, 180, 0, 256], 1)
@@ -132,7 +200,22 @@ class CamShiftPendulumTracker:
         search = back_proj[sy1:sy2, sx1:sx2]
         if search.size:
             geom = self._geometry_mask(search.shape[0], search.shape[1], sx1, sy1)
-            bright = cv2.inRange(hsv[sy1:sy2, sx1:sx2], (0, 0, 130), (179, 90, 255))
+            hsv_search = hsv[sy1:sy2, sx1:sx2]
+            color_mask = self._color_mask(hsv_search)
+            color_mask[~geom] = 0
+            best_color = self._best_component_from_mask(color_mask, sx1, sy1)
+            if best_color is not None:
+                cx, cy, confidence = best_color[1], best_color[2], best_color[3]
+                box_size = int(max(16, min(80, self.radius_tolerance)))
+                self.window = (
+                    max(0, int(cx - box_size / 2)),
+                    max(0, int(cy - box_size / 2)),
+                    min(box_size, w),
+                    min(box_size, h),
+                )
+                return self._measure_point(cx, cy, confidence, frame_idx, time_s)
+
+            bright = cv2.inRange(hsv_search, (0, 0, 130), (179, 90, 255))
             combined = search.copy()
             combined[bright > 0] = np.maximum(combined[bright > 0], 220)
             combined[~geom] = 0
