@@ -48,6 +48,15 @@ class CamShiftPendulumTracker:
         if roi.size == 0:
             raise ValueError(f"pendulum {config.pendulum_id}: initial box is empty")
 
+        self.initial_center = (x + w / 2.0, y + h / 2.0)
+        self.length_px = max(
+            20.0,
+            math.hypot(self.initial_center[0] - config.pivot_x, self.initial_center[1] - config.pivot_y),
+        )
+        self.radius_tolerance = max(22.0, 0.18 * self.length_px, max(w, h) * 1.6)
+        self.search_margin = int(max(28.0, max(w, h) * 2.5))
+        self.max_angle_rad = math.radians(78.0)
+
         hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv_roi, (0, 25, 35), (179, 255, 255))
         hist = cv2.calcHist([hsv_roi], [0, 1], mask, [36, 32], [0, 180, 0, 256])
@@ -55,12 +64,113 @@ class CamShiftPendulumTracker:
         self.hist = hist
         self.term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 12, 1)
 
+    def _search_bounds(self, frame_shape):
+        h, w = frame_shape[:2]
+        px, py = self.config.pivot_x, self.config.pivot_y
+        reach_x = self.length_px * math.sin(self.max_angle_rad) + self.radius_tolerance + self.search_margin
+        reach_up = self.radius_tolerance + self.search_margin
+        reach_down = self.length_px + self.radius_tolerance + self.search_margin
+        x1 = max(0, int(px - reach_x))
+        y1 = max(0, int(py - reach_up))
+        x2 = min(w, int(px + reach_x))
+        y2 = min(h, int(py + reach_down))
+        return x1, y1, x2, y2
+
+    def _geometry_mask(self, height, width, offset_x, offset_y):
+        yy, xx = np.mgrid[0:height, 0:width]
+        gx = xx + offset_x
+        gy = yy + offset_y
+        dx = gx - self.config.pivot_x
+        dy = gy - self.config.pivot_y
+        radius = np.sqrt(dx * dx + dy * dy)
+        angle = np.arctan2(dx, dy)
+        return (
+            (np.abs(radius - self.length_px) <= self.radius_tolerance)
+            & (np.abs(angle) <= self.max_angle_rad)
+            & (dy > 0)
+        )
+
+    def _measure_point(self, cx, cy, confidence, frame_idx, time_s):
+        angle = math.atan2(cx - self.config.pivot_x, self.config.pivot_y - cy)
+        if self.last_angle is None or self.last_time is None or time_s <= self.last_time:
+            omega = 0.0
+            speed = 0.0
+        else:
+            dt = time_s - self.last_time
+            dtheta = math.atan2(math.sin(angle - self.last_angle), math.cos(angle - self.last_angle))
+            omega = dtheta / dt
+            speed = math.hypot(cx - self.last_x, cy - self.last_y) / dt
+
+        self.last_center = (cx, cy)
+        self.last_angle = angle
+        self.last_time = time_s
+        self.last_x = cx
+        self.last_y = cy
+        self.trail.append((int(cx), int(cy)))
+        self.trail = self.trail[-90:]
+
+        return TrackPoint(
+            frame=frame_idx,
+            time_s=time_s,
+            pendulum_id=self.config.pendulum_id,
+            x_px=float(cx),
+            y_px=float(cy),
+            angle_rad=float(angle),
+            angle_deg=float(math.degrees(angle)),
+            omega_rad_s=float(omega),
+            speed_px_s=float(speed),
+            confidence=float(confidence),
+        )
+
     def update(self, frame, frame_idx, time_s):
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         back_proj = cv2.calcBackProject([hsv], [0, 1], self.hist, [0, 180, 0, 256], 1)
         back_proj = cv2.GaussianBlur(back_proj, (5, 5), 0)
 
         h, w = frame.shape[:2]
+        sx1, sy1, sx2, sy2 = self._search_bounds(frame.shape)
+        search = back_proj[sy1:sy2, sx1:sx2]
+        if search.size:
+            geom = self._geometry_mask(search.shape[0], search.shape[1], sx1, sy1)
+            bright = cv2.inRange(hsv[sy1:sy2, sx1:sx2], (0, 0, 130), (179, 90, 255))
+            combined = search.copy()
+            combined[bright > 0] = np.maximum(combined[bright > 0], 220)
+            combined[~geom] = 0
+            nonzero = combined[combined > 0]
+            if nonzero.size:
+                threshold = max(35, int(np.percentile(nonzero, 88)))
+                mask = (combined >= threshold).astype(np.uint8) * 255
+                mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+                mask = cv2.dilate(mask, np.ones((3, 3), np.uint8), iterations=1)
+                num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
+                best = None
+                predicted = self.last_center or self.initial_center
+                for label in range(1, num_labels):
+                    area = int(stats[label, cv2.CC_STAT_AREA])
+                    if area < 6:
+                        continue
+                    local_cx, local_cy = centroids[label]
+                    cx = float(local_cx + sx1)
+                    cy = float(local_cy + sy1)
+                    distance_penalty = 0.02 * math.hypot(cx - predicted[0], cy - predicted[1])
+                    radius_penalty = 0.015 * abs(
+                        math.hypot(cx - self.config.pivot_x, cy - self.config.pivot_y) - self.length_px
+                    )
+                    component_values = combined[labels == label]
+                    score = float(np.mean(component_values)) + 0.18 * area - distance_penalty - radius_penalty
+                    if best is None or score > best[0]:
+                        best = (score, cx, cy, float(np.mean(component_values) / 255.0))
+                if best is not None:
+                    cx, cy, confidence = best[1], best[2], best[3]
+                    box_size = int(max(16, min(80, self.radius_tolerance)))
+                    self.window = (
+                        max(0, int(cx - box_size / 2)),
+                        max(0, int(cy - box_size / 2)),
+                        min(box_size, w),
+                        min(box_size, h),
+                    )
+                    return self._measure_point(cx, cy, confidence, frame_idx, time_s)
+
         x, y, bw, bh = self.window
         x = max(0, min(x, w - 1))
         y = max(0, min(y, h - 1))
@@ -83,37 +193,7 @@ class CamShiftPendulumTracker:
         x2 = max(x1 + 1, min(x0 + ww, w))
         y2 = max(y1 + 1, min(y0 + hh, h))
         confidence = float(np.mean(back_proj[y1:y2, x1:x2]) / 255.0)
-
-        angle = math.atan2(cx - self.config.pivot_x, self.config.pivot_y - cy)
-        if self.last_angle is None or self.last_time is None or time_s <= self.last_time:
-            omega = 0.0
-            speed = 0.0
-        else:
-            dt = time_s - self.last_time
-            dtheta = math.atan2(math.sin(angle - self.last_angle), math.cos(angle - self.last_angle))
-            omega = dtheta / dt
-            speed = math.hypot(cx - self.last_x, cy - self.last_y) / dt
-
-        self.last_center = (cx, cy)
-        self.last_angle = angle
-        self.last_time = time_s
-        self.last_x = cx
-        self.last_y = cy
-        self.trail.append((int(cx), int(cy)))
-        self.trail = self.trail[-180:]
-
-        return TrackPoint(
-            frame=frame_idx,
-            time_s=time_s,
-            pendulum_id=self.config.pendulum_id,
-            x_px=float(cx),
-            y_px=float(cy),
-            angle_rad=float(angle),
-            angle_deg=float(math.degrees(angle)),
-            omega_rad_s=float(omega),
-            speed_px_s=float(speed),
-            confidence=confidence,
-        )
+        return self._measure_point(cx, cy, confidence, frame_idx, time_s)
 
     def draw(self, frame, point: TrackPoint):
         color = palette(self.config.pendulum_id)
@@ -126,7 +206,7 @@ class CamShiftPendulumTracker:
             cv2.polylines(frame, [np.array(self.trail, dtype=np.int32)], False, color, 1, cv2.LINE_AA)
         cv2.putText(
             frame,
-            f"P{self.config.pendulum_id} {point.angle_deg:+.1f} deg",
+            f"P{self.config.pendulum_id}",
             (cx + 10, cy - 8),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.45,
