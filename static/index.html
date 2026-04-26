@@ -28,13 +28,15 @@
         <div class="group">
           <h2>摄像头</h2>
           <label>设备编号 <input id="camera" type="number" value="0" min="0" /></label>
-          <label>宽度 <input id="width" type="number" value="1280" min="320" /></label>
-          <label>高度 <input id="height" type="number" value="720" min="240" /></label>
+          <label>宽度 <input id="width" type="number" value="640" min="320" /></label>
+          <label>高度 <input id="height" type="number" value="480" min="240" /></label>
           <label>帧率 <input id="fps" type="number" value="30" min="1" /></label>
           <div class="row">
             <button id="startCamera">打开摄像头</button>
             <button id="stopCamera" class="secondary">关闭</button>
           </div>
+          <button id="scanCamera" class="secondary full">检测摄像头</button>
+          <div class="device-list" id="deviceList"></div>
         </div>
 
         <div class="group">

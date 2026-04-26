@@ -10,8 +10,16 @@ python -m pip install -r requirements.txt
 
 ## 网页界面
 
+这个网页界面需要在连接摄像头的电脑上本地运行。直接打开 GitHub 页面或仓库文件不能控制你电脑的摄像头，因为真正调用摄像头的是本机 Python/OpenCV 后端。
+
 ```powershell
 python web_app.py
+```
+
+也可以双击：
+
+```text
+start_web.bat
 ```
 
 启动后在浏览器打开：
@@ -23,12 +31,19 @@ http://127.0.0.1:7860
 网页界面支持：
 
 - 打开和关闭摄像头
+- 检测可用摄像头编号
 - 在实时画面上点击每个摆的悬点
 - 拖框选择每个摆球或彩色标记
 - 开始和停止录像
 - 自动保存原始视频、标注视频、CSV 数据和角度曲线
 
 ## 命令行模式
+
+先检测摄像头编号：
+
+```powershell
+python camera_test.py
+```
 
 ```powershell
 python magnetic_newton_cradle_recorder.py --camera 0 --num-pendulums 5

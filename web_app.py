@@ -29,8 +29,8 @@ class RecorderState:
         self.thread = None
         self.running = False
         self.camera_index = 0
-        self.width = 1280
-        self.height = 720
+        self.width = 640
+        self.height = 480
         self.fps = 30.0
         self.output_dir = Path("magnetic_cradle_runs")
 
@@ -163,8 +163,8 @@ def index():
 def start_camera():
     data = request.get_json(force=True, silent=True) or {}
     camera = int(data.get("camera", 0))
-    width = int(data.get("width", 1280))
-    height = int(data.get("height", 720))
+    width = int(data.get("width", 640))
+    height = int(data.get("height", 480))
     fps = float(data.get("fps", 30))
 
     with STATE.lock:
@@ -192,6 +192,47 @@ def start_camera():
         STATE.thread = threading.Thread(target=camera_loop, daemon=True)
         STATE.thread.start()
     return jsonify({"ok": True})
+
+
+@app.get("/api/cameras")
+def list_cameras():
+    devices = []
+    with STATE.lock:
+        if STATE.running:
+            return jsonify(
+                {
+                    "ok": True,
+                    "devices": [
+                        {
+                            "index": STATE.camera_index,
+                            "opened": True,
+                            "frame": STATE.frame_size is not None,
+                            "width": STATE.frame_size["width"] if STATE.frame_size else None,
+                            "height": STATE.frame_size["height"] if STATE.frame_size else None,
+                            "active": True,
+                        }
+                    ],
+                }
+            )
+
+    for index in range(5):
+        cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
+        if not cap.isOpened():
+            cap = cv2.VideoCapture(index)
+        opened = cap.isOpened()
+        ok, frame = cap.read() if opened else (False, None)
+        devices.append(
+            {
+                "index": index,
+                "opened": bool(opened),
+                "frame": bool(ok),
+                "width": int(frame.shape[1]) if frame is not None else None,
+                "height": int(frame.shape[0]) if frame is not None else None,
+                "active": False,
+            }
+        )
+        cap.release()
+    return jsonify({"ok": True, "devices": devices})
 
 
 @app.post("/api/camera/stop")

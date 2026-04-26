@@ -173,6 +173,36 @@ $("stopCamera").onclick = async () => {
   }
 };
 
+$("scanCamera").onclick = async () => {
+  try {
+    setStatus("正在检测摄像头");
+    const data = await api("/api/cameras");
+    const usable = data.devices.filter((item) => item.opened && item.frame);
+    if (!usable.length) {
+      $("deviceList").innerHTML = "<div>没有检测到可用摄像头</div>";
+      setStatus("没有检测到可用摄像头，请检查 Windows 摄像头权限");
+      return;
+    }
+    $("deviceList").innerHTML = usable
+      .map(
+        (item) =>
+          `<button type="button" data-camera="${item.index}" data-width="${item.width}" data-height="${item.height}">摄像头 ${item.index} · ${item.width}×${item.height}${item.active ? " · 使用中" : ""}</button>`
+      )
+      .join("");
+    $("deviceList").querySelectorAll("button").forEach((button) => {
+      button.onclick = () => {
+        $("camera").value = button.dataset.camera;
+        if (button.dataset.width !== "null") $("width").value = button.dataset.width;
+        if (button.dataset.height !== "null") $("height").value = button.dataset.height;
+        setStatus(`已选择摄像头 ${button.dataset.camera}`);
+      };
+    });
+    setStatus(`检测到 ${usable.length} 个可用摄像头`);
+  } catch (err) {
+    setStatus(err.message);
+  }
+};
+
 $("saveCalibration").onclick = async () => {
   if (pivots.length !== count() || boxes.length !== count()) {
     setStatus("悬点和摆球框数量需要与摆的数量一致");

@@ -177,6 +177,11 @@ button.secondary {
   color: #25313d;
 }
 
+button.full {
+  width: 100%;
+  margin-top: 8px;
+}
+
 button.danger {
   background: var(--danger);
 }
@@ -203,6 +208,25 @@ button.danger {
   display: grid;
   gap: 8px;
   font-size: 13px;
+}
+
+.device-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.device-list button {
+  height: auto;
+  min-height: 32px;
+  background: #eef5f7;
+  color: #1f4655;
+  text-align: left;
+  padding: 7px 9px;
+  font-weight: 600;
 }
 
 .result a {
