@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>磁力牛顿摆记录器</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="stage">
+        <div class="topbar">
+          <div>
+            <h1>磁力牛顿摆记录器</h1>
+            <p id="statusText">等待打开摄像头</p>
+          </div>
+          <div class="rec-badge" id="recBadge">READY</div>
+        </div>
+
+        <div class="viewer" id="viewer">
+          <img id="video" alt="实时画面" />
+          <canvas id="overlay"></canvas>
+          <div class="empty" id="emptyState">打开摄像头后开始标定</div>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="group">
+          <h2>摄像头</h2>
+          <label>设备编号 <input id="camera" type="number" value="0" min="0" /></label>
+          <label>宽度 <input id="width" type="number" value="1280" min="320" /></label>
+          <label>高度 <input id="height" type="number" value="720" min="240" /></label>
+          <label>帧率 <input id="fps" type="number" value="30" min="1" /></label>
+          <div class="row">
+            <button id="startCamera">打开摄像头</button>
+            <button id="stopCamera" class="secondary">关闭</button>
+          </div>
+        </div>
+
+        <div class="group">
+          <h2>标定</h2>
+          <label>摆的数量 <input id="count" type="number" value="5" min="1" max="8" /></label>
+          <div class="segmented">
+            <button id="pivotMode" class="active">点悬点</button>
+            <button id="boxMode">框摆球</button>
+          </div>
+          <div class="row">
+            <button id="undo" class="secondary">撤销</button>
+            <button id="clear" class="secondary">清空</button>
+          </div>
+          <button id="saveCalibration">应用标定</button>
+          <p class="hint" id="calibrationHint">先从左到右点击所有悬点，再逐个拖框摆球或彩色标记。</p>
+        </div>
+
+        <div class="group">
+          <h2>录像</h2>
+          <div class="row">
+            <button id="startRecord" class="danger">开始录像</button>
+            <button id="stopRecord" class="secondary">停止保存</button>
+          </div>
+          <div class="result" id="result"></div>
+        </div>
+      </aside>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
