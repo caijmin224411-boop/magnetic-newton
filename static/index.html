@@ -12,7 +12,8 @@
         <div class="topbar">
           <div>
             <h1>磁力牛顿摆记录器</h1>
-            <p id="statusText">等待打开摄像头</p>
+          <p id="statusText">等待打开摄像头</p>
+          <p id="fpsText" class="metric">实际 FPS: --</p>
           </div>
           <div class="rec-badge" id="recBadge">READY</div>
         </div>
@@ -30,7 +31,8 @@
           <label>设备编号 <input id="camera" type="number" value="0" min="0" /></label>
           <label>宽度 <input id="width" type="number" value="640" min="320" /></label>
           <label>高度 <input id="height" type="number" value="480" min="240" /></label>
-          <label>帧率 <input id="fps" type="number" value="30" min="1" /></label>
+          <label>帧率 <input id="fps" type="number" value="60" min="1" /></label>
+          <label>预览质量 <input id="previewQuality" type="number" value="68" min="35" max="90" /></label>
           <div class="row">
             <button id="startCamera">打开摄像头</button>
             <button id="stopCamera" class="secondary">关闭</button>

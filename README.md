@@ -36,6 +36,7 @@ http://127.0.0.1:7860
 - 拖框选择每个摆锤上的黄色标识点
 - 开始和停止录像
 - 自动保存原始视频、标注视频、CSV 数据和角度曲线
+- 显示当前实际 FPS，方便判断手机摄像头是否输出足够快
 
 ## 命令行模式
 
@@ -44,6 +45,14 @@ http://127.0.0.1:7860
 ```powershell
 python camera_test.py
 ```
+
+DroidCam 帧率低时优先尝试：
+
+- 网页里设备编号选 `1`
+- 分辨率先用 `640 x 480`
+- 帧率填 `60`
+- 预览质量填 `60-70`
+- DroidCam 手机端和电脑端都关闭省电模式，并尽量使用 USB 连接
 
 ```powershell
 python magnetic_newton_cradle_recorder.py --camera 0 --num-pendulums 5

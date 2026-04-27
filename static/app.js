@@ -150,6 +150,7 @@ $("startCamera").onclick = async () => {
       width: Number($("width").value),
       height: Number($("height").value),
       fps: Number($("fps").value),
+      previewQuality: Number($("previewQuality").value),
     });
     video.src = `/api/video?t=${Date.now()}`;
     video.style.display = "block";
@@ -260,6 +261,7 @@ function startPolling() {
       frameSize = status.frameSize || frameSize;
       $("recBadge").textContent = status.recording ? "REC" : "READY";
       $("recBadge").classList.toggle("recording", status.recording);
+      $("fpsText").textContent = `实际 FPS: ${status.actualFps || "--"}`;
       if (status.error) setStatus(status.error);
       fitCanvas();
     } catch {

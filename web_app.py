@@ -31,13 +31,17 @@ class RecorderState:
         self.camera_index = 0
         self.width = 640
         self.height = 480
-        self.fps = 30.0
+        self.fps = 60.0
+        self.preview_quality = 68
         self.output_dir = Path("magnetic_cradle_runs")
 
         self.latest_frame = None
         self.latest_jpeg = None
         self.frame_size = None
         self.error = None
+        self.actual_fps = 0.0
+        self._fps_frames = 0
+        self._fps_started_at = time.monotonic()
 
         self.configs = []
         self.trackers = []
@@ -57,17 +61,17 @@ STATE = RecorderState()
 
 def draw_idle_overlay(frame):
     view = frame.copy()
-    cv2.putText(
-        view,
-        "Ready",
-        (20, 34),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.85,
-        (80, 230, 80),
-        2,
-        cv2.LINE_AA,
-    )
+    cv2.putText(view, "Ready", (20, 34), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (80, 230, 80), 2, cv2.LINE_AA)
     return view
+
+
+def update_actual_fps():
+    STATE._fps_frames += 1
+    elapsed = time.monotonic() - STATE._fps_started_at
+    if elapsed >= 1.0:
+        STATE.actual_fps = STATE._fps_frames / elapsed
+        STATE._fps_frames = 0
+        STATE._fps_started_at = time.monotonic()
 
 
 def camera_loop():
@@ -77,21 +81,21 @@ def camera_loop():
                 break
             recording = STATE.recording
             trackers = list(STATE.trackers)
+            preview_quality = STATE.preview_quality
 
         ok, frame = STATE.cap.read()
         if not ok:
             with STATE.lock:
-                STATE.error = "摄像头没有返回画面"
-            time.sleep(0.05)
+                STATE.error = "camera returned no frame"
+            time.sleep(0.01)
             continue
 
         annotated = draw_idle_overlay(frame)
         points = []
 
         with STATE.lock:
-            if STATE.frame_size is None:
-                h, w = frame.shape[:2]
-                STATE.frame_size = {"width": w, "height": h}
+            h, w = frame.shape[:2]
+            STATE.frame_size = {"width": w, "height": h}
             if recording and STATE.record_started_at is None:
                 STATE.record_started_at = time.monotonic()
             time_s = STATE.recorded_offset_s
@@ -127,14 +131,12 @@ def camera_loop():
                     STATE.rows.extend(points)
                     STATE.frame_idx += 1
 
-        ok_jpeg, buffer = cv2.imencode(".jpg", annotated, [int(cv2.IMWRITE_JPEG_QUALITY), 82])
+        ok_jpeg, buffer = cv2.imencode(".jpg", annotated, [int(cv2.IMWRITE_JPEG_QUALITY), preview_quality])
         with STATE.lock:
             STATE.latest_frame = frame.copy()
             if ok_jpeg:
                 STATE.latest_jpeg = buffer.tobytes()
-
-        delay = max(0.001, 1.0 / max(STATE.fps, 1.0))
-        time.sleep(delay)
+            update_actual_fps()
 
 
 def stop_camera_locked():
@@ -165,21 +167,26 @@ def start_camera():
     camera = int(data.get("camera", 0))
     width = int(data.get("width", 640))
     height = int(data.get("height", 480))
-    fps = float(data.get("fps", 30))
+    fps = float(data.get("fps", 60))
+    preview_quality = int(data.get("previewQuality", 68))
 
     with STATE.lock:
         if STATE.recording:
-            return jsonify({"ok": False, "error": "请先停止录像"}), 400
+            return jsonify({"ok": False, "error": "stop recording first"}), 400
         if STATE.cap is not None:
             stop_camera_locked()
         STATE.camera_index = camera
         STATE.width = width
         STATE.height = height
         STATE.fps = fps
+        STATE.preview_quality = max(35, min(90, preview_quality))
         STATE.error = None
         STATE.latest_jpeg = None
         STATE.latest_frame = None
         STATE.frame_size = None
+        STATE.actual_fps = 0.0
+        STATE._fps_frames = 0
+        STATE._fps_started_at = time.monotonic()
 
     try:
         cap = make_capture(camera, width, height, fps)
@@ -217,7 +224,10 @@ def list_cameras():
 
     for index in range(5):
         cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
-        if not cap.isOpened():
+        if cap.isOpened():
+            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        else:
             cap = cv2.VideoCapture(index)
         opened = cap.isOpened()
         ok, frame = cap.read() if opened else (False, None)
@@ -239,7 +249,7 @@ def list_cameras():
 def stop_camera():
     with STATE.lock:
         if STATE.recording:
-            return jsonify({"ok": False, "error": "请先停止录像"}), 400
+            return jsonify({"ok": False, "error": "stop recording first"}), 400
         stop_camera_locked()
     return jsonify({"ok": True})
 
@@ -247,15 +257,17 @@ def stop_camera():
 @app.get("/api/video")
 def video_feed():
     def generate():
+        last = None
         while True:
             with STATE.lock:
                 jpeg = STATE.latest_jpeg
                 running = STATE.running
             if not running:
                 break
-            if jpeg:
+            if jpeg and jpeg is not last:
+                last = jpeg
                 yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpeg + b"\r\n"
-            time.sleep(0.04)
+            time.sleep(0.003)
 
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
@@ -268,6 +280,7 @@ def status():
                 "running": STATE.running,
                 "recording": STATE.recording,
                 "frameSize": STATE.frame_size,
+                "actualFps": round(STATE.actual_fps, 1),
                 "pendulums": [asdict(c) for c in STATE.configs],
                 "runDir": str(STATE.run_dir) if STATE.run_dir else None,
                 "lastResult": STATE.last_result,
@@ -281,7 +294,7 @@ def set_calibration():
     data = request.get_json(force=True)
     pendulums = data.get("pendulums", [])
     if not pendulums:
-        return jsonify({"ok": False, "error": "没有收到标定数据"}), 400
+        return jsonify({"ok": False, "error": "no calibration data"}), 400
 
     configs = []
     for idx, item in enumerate(pendulums, start=1):
@@ -294,7 +307,7 @@ def set_calibration():
             int(round(box["h"])),
         )
         if init_box[2] <= 2 or init_box[3] <= 2:
-            return jsonify({"ok": False, "error": f"第 {idx} 个摆球框太小"}), 400
+            return jsonify({"ok": False, "error": f"marker box {idx} is too small"}), 400
         configs.append(
             PendulumConfig(
                 pendulum_id=idx,
@@ -306,7 +319,7 @@ def set_calibration():
 
     with STATE.lock:
         if STATE.latest_frame is None:
-            return jsonify({"ok": False, "error": "摄像头还没有画面"}), 400
+            return jsonify({"ok": False, "error": "camera has no frame yet"}), 400
         frame = STATE.latest_frame.copy()
 
     try:
@@ -324,9 +337,9 @@ def set_calibration():
 def start_recording():
     with STATE.lock:
         if not STATE.running or STATE.latest_frame is None:
-            return jsonify({"ok": False, "error": "请先打开摄像头"}), 400
+            return jsonify({"ok": False, "error": "start camera first"}), 400
         if not STATE.trackers:
-            return jsonify({"ok": False, "error": "请先完成标定"}), 400
+            return jsonify({"ok": False, "error": "calibrate first"}), 400
         if STATE.recording:
             return jsonify({"ok": True})
 

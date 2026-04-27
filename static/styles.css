@@ -68,11 +68,17 @@ h2 {
 }
 
 #statusText,
-.hint {
+.hint,
+.metric {
   color: var(--muted);
   font-size: 13px;
   margin-top: 4px;
   line-height: 1.45;
+}
+
+.metric {
+  color: #176b87;
+  font-weight: 650;
 }
 
 .rec-badge {
