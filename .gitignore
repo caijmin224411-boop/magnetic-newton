@@ -5,6 +5,8 @@ venv/
 env/
 
 magnetic_cradle_runs/
+video_runs/
+videos/
 *.mp4
 *.avi
 *.mov
