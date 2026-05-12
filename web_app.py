@@ -4,6 +4,7 @@ import time
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
+from werkzeug.utils import secure_filename
 
 import cv2
 from flask import Flask, Response, jsonify, request, send_from_directory
@@ -57,6 +58,27 @@ class RecorderState:
 
 
 STATE = RecorderState()
+
+
+class OfflineState:
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.video_path = None
+        self.first_frame = None
+        self.frame_size = None
+        self.source_fps = 0.0
+        self.total_frames = 0
+        self.configs = []
+        self.running = False
+        self.progress = 0.0
+        self.message = "No video loaded"
+        self.result = None
+        self.error = None
+
+
+OFFLINE = OfflineState()
+VIDEOS_DIR = Path("videos")
+VIDEO_RUNS_DIR = Path("video_runs")
 
 
 def draw_idle_overlay(frame):
@@ -399,6 +421,258 @@ def stop_recording():
 @app.route("/runs/<path:filename>")
 def runs(filename):
     return send_from_directory(STATE.output_dir, filename)
+
+
+@app.route("/video-runs/<path:filename>")
+def video_runs(filename):
+    return send_from_directory(VIDEO_RUNS_DIR, filename)
+
+
+@app.post("/api/offline/upload")
+def offline_upload():
+    uploaded = request.files.get("video")
+    if not uploaded or not uploaded.filename:
+        return jsonify({"ok": False, "error": "No video file received"}), 400
+
+    VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+    filename = secure_filename(uploaded.filename)
+    if not filename:
+        filename = f"video_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
+    video_path = VIDEOS_DIR / filename
+    uploaded.save(video_path)
+
+    cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        return jsonify({"ok": False, "error": "Cannot open uploaded video"}), 400
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    ok, frame = cap.read()
+    cap.release()
+    if not ok:
+        return jsonify({"ok": False, "error": "Cannot read first frame"}), 400
+
+    h, w = frame.shape[:2]
+    with OFFLINE.lock:
+        OFFLINE.video_path = video_path
+        OFFLINE.first_frame = frame
+        OFFLINE.frame_size = {"width": w, "height": h}
+        OFFLINE.source_fps = fps
+        OFFLINE.total_frames = total_frames
+        OFFLINE.configs = []
+        OFFLINE.progress = 0.0
+        OFFLINE.message = "Video loaded. Calibrate pivots and yellow markers."
+        OFFLINE.result = None
+        OFFLINE.error = None
+
+    return jsonify(
+        {
+            "ok": True,
+            "video": str(video_path),
+            "frameSize": OFFLINE.frame_size,
+            "sourceFps": round(fps, 3),
+            "totalFrames": total_frames,
+        }
+    )
+
+
+@app.get("/api/offline/frame")
+def offline_frame():
+    with OFFLINE.lock:
+        frame = None if OFFLINE.first_frame is None else OFFLINE.first_frame.copy()
+    if frame is None:
+        return jsonify({"ok": False, "error": "No video loaded"}), 400
+    ok, buffer = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 88])
+    if not ok:
+        return jsonify({"ok": False, "error": "Cannot encode frame"}), 500
+    return Response(buffer.tobytes(), mimetype="image/jpeg")
+
+
+@app.post("/api/offline/calibration")
+def offline_calibration():
+    data = request.get_json(force=True)
+    pendulums = data.get("pendulums", [])
+    if not pendulums:
+        return jsonify({"ok": False, "error": "No calibration data"}), 400
+
+    configs = []
+    for idx, item in enumerate(pendulums, start=1):
+        box = item.get("box", {})
+        pivot = item.get("pivot", {})
+        init_box = (
+            int(round(box["x"])),
+            int(round(box["y"])),
+            int(round(box["w"])),
+            int(round(box["h"])),
+        )
+        if init_box[2] <= 2 or init_box[3] <= 2:
+            return jsonify({"ok": False, "error": f"Marker box {idx} is too small"}), 400
+        configs.append(
+            PendulumConfig(
+                pendulum_id=idx,
+                pivot_x=float(pivot["x"]),
+                pivot_y=float(pivot["y"]),
+                init_box=init_box,
+            )
+        )
+
+    with OFFLINE.lock:
+        if OFFLINE.first_frame is None:
+            return jsonify({"ok": False, "error": "Load a video first"}), 400
+        frame = OFFLINE.first_frame.copy()
+
+    try:
+        [CamShiftPendulumTracker(frame, cfg) for cfg in configs]
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+    with OFFLINE.lock:
+        OFFLINE.configs = configs
+        OFFLINE.message = "Calibration saved. Ready to analyze."
+    return jsonify({"ok": True, "pendulums": [asdict(c) for c in configs]})
+
+
+def offline_result_links(result):
+    run_name = Path(result["run_dir"]).name
+    return {
+        "runDir": result["run_dir"],
+        "rawVideo": f"/video-runs/{run_name}/raw_video.mp4",
+        "annotatedVideo": f"/video-runs/{run_name}/annotated_tracking.mp4",
+        "wideCsv": f"/video-runs/{run_name}/pendulum_tracking_wide.csv",
+        "longCsv": f"/video-runs/{run_name}/pendulum_tracking_long.csv",
+        "plot": f"/video-runs/{run_name}/angle_timeseries.png" if result.get("plot") else None,
+        "resultJson": f"/video-runs/{run_name}/result.json",
+        "frames": result.get("processed_frames", 0),
+    }
+
+
+def offline_worker(options):
+    with OFFLINE.lock:
+        video_path = OFFLINE.video_path
+        first_frame = None if OFFLINE.first_frame is None else OFFLINE.first_frame.copy()
+        configs = list(OFFLINE.configs)
+        source_fps = float(options.get("fps") or OFFLINE.source_fps or 30.0)
+        total_frames = OFFLINE.total_frames
+        OFFLINE.running = True
+        OFFLINE.progress = 0.0
+        OFFLINE.message = "Analyzing video..."
+        OFFLINE.result = None
+        OFFLINE.error = None
+
+    try:
+        if video_path is None or first_frame is None:
+            raise RuntimeError("No video loaded")
+        if not configs:
+            raise RuntimeError("Calibrate before analysis")
+
+        start_s = max(0.0, float(options.get("start") or 0.0))
+        end_value = options.get("end")
+        end_s = None if end_value in (None, "") else float(end_value)
+        preview_every = max(1, int(options.get("previewEvery") or 1))
+        start_frame = max(0, int(round(start_s * source_fps)))
+        end_frame = total_frames - 1 if end_s is None else min(total_frames - 1, int(round(end_s * source_fps)))
+        if total_frames <= 0 or start_frame > end_frame:
+            raise RuntimeError("Invalid video frame range")
+
+        cap = cv2.VideoCapture(str(video_path))
+        if not cap.isOpened():
+            raise RuntimeError("Cannot open video")
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+
+        run_dir = VIDEO_RUNS_DIR / datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_dir.mkdir(parents=True, exist_ok=True)
+        save_config(run_dir / "calibration.json", configs)
+        trackers = [CamShiftPendulumTracker(first_frame, cfg) for cfg in configs]
+        raw_writer, annotated_writer = open_writers(run_dir, first_frame.shape, source_fps / preview_every)
+        rows = []
+        processed = 0
+        total_to_process = end_frame - start_frame + 1
+        source_frame = start_frame
+
+        while source_frame <= end_frame:
+            ok, frame = cap.read()
+            if not ok:
+                break
+            time_s = (source_frame - start_frame) / source_fps
+            annotated = frame.copy()
+            frame_points = []
+            for tracker in trackers:
+                point = tracker.update(frame, processed, time_s)
+                frame_points.append(point)
+                tracker.draw(annotated, point)
+            rows.extend(frame_points)
+
+            if processed % preview_every == 0:
+                raw_writer.write(frame)
+                annotated_writer.write(annotated)
+
+            processed += 1
+            source_frame += 1
+            if processed % 20 == 0:
+                with OFFLINE.lock:
+                    OFFLINE.progress = processed / total_to_process
+                    OFFLINE.message = f"Analyzing {processed}/{total_to_process} frames"
+
+        cap.release()
+        raw_writer.release()
+        annotated_writer.release()
+        long_csv, wide_csv = write_csvs(run_dir, rows, configs)
+        plot_path = plot_angles(run_dir, rows)
+        result = {
+            "video": str(video_path),
+            "source_fps": source_fps,
+            "source_frames": total_frames,
+            "start_frame": start_frame,
+            "end_frame": end_frame,
+            "processed_frames": processed,
+            "run_dir": str(run_dir),
+            "raw_video": str(run_dir / "raw_video.mp4"),
+            "annotated_video": str(run_dir / "annotated_tracking.mp4"),
+            "long_csv": str(long_csv),
+            "wide_csv": str(wide_csv),
+            "plot": str(plot_path) if plot_path else None,
+            "pendulums": [asdict(cfg) for cfg in configs],
+        }
+        (run_dir / "result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        with OFFLINE.lock:
+            OFFLINE.running = False
+            OFFLINE.progress = 1.0
+            OFFLINE.message = "Analysis complete"
+            OFFLINE.result = offline_result_links(result)
+    except Exception as exc:
+        with OFFLINE.lock:
+            OFFLINE.running = False
+            OFFLINE.error = str(exc)
+            OFFLINE.message = "Analysis failed"
+
+
+@app.post("/api/offline/analyze")
+def offline_analyze():
+    options = request.get_json(force=True, silent=True) or {}
+    with OFFLINE.lock:
+        if OFFLINE.running:
+            return jsonify({"ok": False, "error": "Analysis already running"}), 400
+    thread = threading.Thread(target=offline_worker, args=(options,), daemon=True)
+    thread.start()
+    return jsonify({"ok": True})
+
+
+@app.get("/api/offline/status")
+def offline_status():
+    with OFFLINE.lock:
+        return jsonify(
+            {
+                "ok": True,
+                "running": OFFLINE.running,
+                "progress": round(OFFLINE.progress, 4),
+                "message": OFFLINE.message,
+                "error": OFFLINE.error,
+                "result": OFFLINE.result,
+                "frameSize": OFFLINE.frame_size,
+                "sourceFps": round(OFFLINE.source_fps, 3),
+                "totalFrames": OFFLINE.total_frames,
+                "pendulums": [asdict(c) for c in OFFLINE.configs],
+            }
+        )
 
 
 if __name__ == "__main__":

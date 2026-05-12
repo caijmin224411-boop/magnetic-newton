@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>磁力牛顿摆记录器</title>
+    <title>磁力牛顿摆分析器</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
@@ -11,59 +11,88 @@
       <section class="stage">
         <div class="topbar">
           <div>
-            <h1>磁力牛顿摆记录器</h1>
-          <p id="statusText">等待打开摄像头</p>
-          <p id="fpsText" class="metric">实际 FPS: --</p>
+            <h1>磁力牛顿摆分析器</h1>
+            <p id="statusText">上传视频或打开摄像头</p>
+            <p id="fpsText" class="metric">实际 FPS: --</p>
           </div>
-          <div class="rec-badge" id="recBadge">READY</div>
+          <div class="rec-badge" id="recBadge">OFFLINE</div>
         </div>
 
         <div class="viewer" id="viewer">
-          <img id="video" alt="实时画面" />
+          <img id="video" alt="画面预览" />
           <canvas id="overlay"></canvas>
-          <div class="empty" id="emptyState">打开摄像头后开始标定</div>
+          <div class="empty" id="emptyState">离线模式：上传视频后在首帧上标定</div>
         </div>
       </section>
 
       <aside class="panel">
-        <div class="group">
-          <h2>摄像头</h2>
-          <label>设备编号 <input id="camera" type="number" value="0" min="0" /></label>
-          <label>宽度 <input id="width" type="number" value="640" min="320" /></label>
-          <label>高度 <input id="height" type="number" value="480" min="240" /></label>
-          <label>帧率 <input id="fps" type="number" value="60" min="1" /></label>
-          <label>预览质量 <input id="previewQuality" type="number" value="68" min="35" max="90" /></label>
-          <div class="row">
-            <button id="startCamera">打开摄像头</button>
-            <button id="stopCamera" class="secondary">关闭</button>
-          </div>
-          <button id="scanCamera" class="secondary full">检测摄像头</button>
-          <div class="device-list" id="deviceList"></div>
+        <div class="tabs">
+          <button id="offlineTab" class="active">离线分析</button>
+          <button id="liveTab">实时记录</button>
         </div>
 
-        <div class="group">
-          <h2>标定</h2>
-          <label>摆的数量 <input id="count" type="number" value="5" min="1" max="8" /></label>
-          <div class="segmented">
-            <button id="pivotMode" class="active">点悬点</button>
-            <button id="boxMode">框色点</button>
+        <section id="offlinePanel">
+          <div class="group first">
+            <h2>视频</h2>
+            <input id="videoFile" type="file" accept="video/*" />
+            <button id="uploadVideo" class="full">载入视频首帧</button>
+            <div class="device-list" id="videoInfo"></div>
           </div>
-          <div class="row">
-            <button id="undo" class="secondary">撤销</button>
-            <button id="clear" class="secondary">清空</button>
-          </div>
-          <button id="saveCalibration">应用标定</button>
-          <p class="hint" id="calibrationHint">先从左到右点击所有悬点，再逐个拖框每个摆锤上的黄色标识点。框选尽量贴近黄色点，不要框住整个摆锤。</p>
-        </div>
 
-        <div class="group">
-          <h2>录像</h2>
-          <div class="row">
-            <button id="startRecord" class="danger">开始录像</button>
-            <button id="stopRecord" class="secondary">停止保存</button>
+          <div class="group">
+            <h2>标定</h2>
+            <label>摆的数量 <input id="count" type="number" value="5" min="1" max="8" /></label>
+            <div class="segmented">
+              <button id="pivotMode" class="active">点悬点</button>
+              <button id="boxMode">框黄点</button>
+            </div>
+            <div class="row">
+              <button id="undo" class="secondary">撤销</button>
+              <button id="clear" class="secondary">清空</button>
+            </div>
+            <button id="saveCalibration" class="full">应用标定</button>
+            <p class="hint">先从左到右点击悬点，再逐个框住黑色摆锤上的黄色标识点。</p>
           </div>
-          <div class="result" id="result"></div>
-        </div>
+
+          <div class="group">
+            <h2>逐帧分析</h2>
+            <label>起始秒 <input id="offlineStart" type="number" value="0" min="0" step="0.1" /></label>
+            <label>结束秒 <input id="offlineEnd" type="number" min="0" step="0.1" placeholder="留空表示到结尾" /></label>
+            <label>帧率覆盖 <input id="offlineFps" type="number" min="1" step="1" placeholder="慢动作视频可填 120" /></label>
+            <label>预览抽帧 <input id="previewEvery" type="number" value="1" min="1" step="1" /></label>
+            <button id="startOffline" class="danger full">开始离线分析</button>
+            <div class="progress">
+              <div id="progressBar"></div>
+            </div>
+            <div class="result" id="offlineResult"></div>
+          </div>
+        </section>
+
+        <section id="livePanel" hidden>
+          <div class="group first">
+            <h2>摄像头</h2>
+            <label>设备编号 <input id="camera" type="number" value="0" min="0" /></label>
+            <label>宽度 <input id="width" type="number" value="640" min="320" /></label>
+            <label>高度 <input id="height" type="number" value="480" min="240" /></label>
+            <label>帧率 <input id="fps" type="number" value="60" min="1" /></label>
+            <label>预览质量 <input id="previewQuality" type="number" value="68" min="35" max="90" /></label>
+            <div class="row">
+              <button id="startCamera">打开摄像头</button>
+              <button id="stopCamera" class="secondary">关闭</button>
+            </div>
+            <button id="scanCamera" class="secondary full">检测摄像头</button>
+            <div class="device-list" id="deviceList"></div>
+          </div>
+
+          <div class="group">
+            <h2>录像</h2>
+            <div class="row">
+              <button id="startRecord" class="danger">开始录像</button>
+              <button id="stopRecord" class="secondary">停止保存</button>
+            </div>
+            <div class="result" id="result"></div>
+          </div>
+        </section>
       </aside>
     </main>
 

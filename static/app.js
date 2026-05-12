@@ -4,6 +4,7 @@ const video = $("video");
 const overlay = $("overlay");
 const ctx = overlay.getContext("2d");
 
+let activePanel = "offline";
 let mode = "pivot";
 let pivots = [];
 let boxes = [];
@@ -11,6 +12,9 @@ let dragStart = null;
 let draftBox = null;
 let frameSize = null;
 let statusTimer = null;
+let offlineTimer = null;
+
+const colors = ["#ffd447", "#ff9f43", "#4cd964", "#5ac8fa", "#ff5ac8", "#af7aff", "#d4ff5a", "#52ffe0"];
 
 function setStatus(text) {
   $("statusText").textContent = text;
@@ -30,10 +34,29 @@ function count() {
   return Number($("count").value || 1);
 }
 
+function setPanel(next) {
+  activePanel = next;
+  $("offlinePanel").hidden = next !== "offline";
+  $("livePanel").hidden = next !== "live";
+  $("offlineTab").classList.toggle("active", next === "offline");
+  $("liveTab").classList.toggle("active", next === "live");
+  $("recBadge").textContent = next === "offline" ? "OFFLINE" : "READY";
+  setStatus(next === "offline" ? "上传视频后在首帧上标定" : "打开摄像头后标定和录像");
+}
+
 function setMode(next) {
   mode = next;
   $("pivotMode").classList.toggle("active", mode === "pivot");
   $("boxMode").classList.toggle("active", mode === "box");
+  drawOverlay();
+}
+
+function resetCalibration() {
+  pivots = [];
+  boxes = [];
+  dragStart = null;
+  draftBox = null;
+  setMode("pivot");
   drawOverlay();
 }
 
@@ -72,7 +95,6 @@ function drawOverlay() {
   ctx.clearRect(0, 0, overlay.width, overlay.height);
   ctx.lineWidth = 2;
   ctx.font = "14px Segoe UI";
-  const colors = ["#ffd447", "#ff9f43", "#4cd964", "#5ac8fa", "#ff5ac8", "#af7aff", "#d4ff5a", "#52ffe0"];
 
   pivots.forEach((p, i) => {
     const c = toCanvasPoint(p);
@@ -100,6 +122,10 @@ function normalizeBox(a, b) {
   const x = Math.min(a.x, b.x);
   const y = Math.min(a.y, b.y);
   return { x, y, w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) };
+}
+
+function calibrationPayload() {
+  return { pendulums: pivots.map((pivot, i) => ({ pivot, box: boxes[i] })) };
 }
 
 overlay.addEventListener("click", (evt) => {
@@ -130,6 +156,8 @@ overlay.addEventListener("mouseup", (evt) => {
   drawOverlay();
 });
 
+$("offlineTab").onclick = () => setPanel("offline");
+$("liveTab").onclick = () => setPanel("live");
 $("pivotMode").onclick = () => setMode("pivot");
 $("boxMode").onclick = () => setMode("box");
 $("undo").onclick = () => {
@@ -137,11 +165,90 @@ $("undo").onclick = () => {
   else if (pivots.length) pivots.pop();
   drawOverlay();
 };
-$("clear").onclick = () => {
-  pivots = [];
-  boxes = [];
-  setMode("pivot");
+$("clear").onclick = resetCalibration;
+
+$("uploadVideo").onclick = async () => {
+  const file = $("videoFile").files[0];
+  if (!file) {
+    setStatus("先选择一个视频文件");
+    return;
+  }
+  const form = new FormData();
+  form.append("video", file);
+  setStatus("正在载入视频首帧");
+  const res = await fetch("/api/offline/upload", { method: "POST", body: form });
+  const data = await res.json();
+  if (!res.ok || data.ok === false) {
+    setStatus(data.error || "视频载入失败");
+    return;
+  }
+  frameSize = data.frameSize;
+  video.src = `/api/offline/frame?t=${Date.now()}`;
+  video.style.display = "block";
+  $("emptyState").style.display = "none";
+  $("videoInfo").innerHTML = `<div>${data.frameSize.width}×${data.frameSize.height} · ${data.sourceFps} FPS · ${data.totalFrames} 帧</div>`;
+  $("offlineFps").placeholder = `默认 ${Math.round(data.sourceFps)}`;
+  resetCalibration();
+  setStatus("视频已载入，开始标定");
+  startOfflinePolling();
 };
+
+$("saveCalibration").onclick = async () => {
+  if (pivots.length !== count() || boxes.length !== count()) {
+    setStatus("悬点和黄色点框数量需要与摆的数量一致");
+    return;
+  }
+  try {
+    const path = activePanel === "offline" ? "/api/offline/calibration" : "/api/calibration";
+    await api(path, calibrationPayload());
+    setStatus(activePanel === "offline" ? "标定已保存，可以开始离线分析" : "标定已应用，可以开始录像");
+  } catch (err) {
+    setStatus(err.message);
+  }
+};
+
+$("startOffline").onclick = async () => {
+  try {
+    await api("/api/offline/analyze", {
+      start: $("offlineStart").value,
+      end: $("offlineEnd").value,
+      fps: $("offlineFps").value,
+      previewEvery: $("previewEvery").value,
+    });
+    $("offlineResult").innerHTML = "";
+    $("progressBar").style.width = "0%";
+    setStatus("离线分析开始");
+    startOfflinePolling();
+  } catch (err) {
+    setStatus(err.message);
+  }
+};
+
+function startOfflinePolling() {
+  if (offlineTimer) return;
+  offlineTimer = setInterval(async () => {
+    try {
+      const status = await api("/api/offline/status");
+      if (status.frameSize) frameSize = status.frameSize;
+      $("progressBar").style.width = `${Math.round((status.progress || 0) * 100)}%`;
+      if (activePanel === "offline") setStatus(status.error || status.message || "离线模式");
+      if (status.result) showOfflineResult(status.result);
+    } catch {
+      // Ignore brief polling interruptions.
+    }
+  }, 600);
+}
+
+function showOfflineResult(result) {
+  $("offlineResult").innerHTML = `
+    <div>已处理帧数：${result.frames}</div>
+    <a href="${result.annotatedVideo}" target="_blank">标注视频</a>
+    <a href="${result.wideCsv}" target="_blank">宽表 CSV</a>
+    <a href="${result.longCsv}" target="_blank">长表 CSV</a>
+    ${result.plot ? `<a href="${result.plot}" target="_blank">角度曲线</a>` : ""}
+    <a href="${result.resultJson}" target="_blank">分析摘要</a>
+  `;
+}
 
 $("startCamera").onclick = async () => {
   try {
@@ -152,11 +259,13 @@ $("startCamera").onclick = async () => {
       fps: Number($("fps").value),
       previewQuality: Number($("previewQuality").value),
     });
+    frameSize = null;
     video.src = `/api/video?t=${Date.now()}`;
     video.style.display = "block";
     $("emptyState").style.display = "none";
-    setStatus("摄像头已打开，可以开始标定");
-    startPolling();
+    resetCalibration();
+    setStatus("摄像头已打开，可以标定");
+    startLivePolling();
   } catch (err) {
     setStatus(err.message);
   }
@@ -181,7 +290,7 @@ $("scanCamera").onclick = async () => {
     const usable = data.devices.filter((item) => item.opened && item.frame);
     if (!usable.length) {
       $("deviceList").innerHTML = "<div>没有检测到可用摄像头</div>";
-      setStatus("没有检测到可用摄像头，请检查 Windows 摄像头权限");
+      setStatus("没有检测到可用摄像头");
       return;
     }
     $("deviceList").innerHTML = usable
@@ -204,21 +313,6 @@ $("scanCamera").onclick = async () => {
   }
 };
 
-$("saveCalibration").onclick = async () => {
-  if (pivots.length !== count() || boxes.length !== count()) {
-    setStatus("悬点和摆球框数量需要与摆的数量一致");
-    return;
-  }
-  try {
-    await api("/api/calibration", {
-      pendulums: pivots.map((pivot, i) => ({ pivot, box: boxes[i] })),
-    });
-    setStatus("标定已应用，可以开始录像");
-  } catch (err) {
-    setStatus(err.message);
-  }
-};
-
 $("startRecord").onclick = async () => {
   try {
     const data = await api("/api/record/start", {});
@@ -232,44 +326,44 @@ $("startRecord").onclick = async () => {
 $("stopRecord").onclick = async () => {
   try {
     const data = await api("/api/record/stop", {});
-    showResult(data.result);
+    showLiveResult(data.result);
     setStatus("录像已保存");
   } catch (err) {
     setStatus(err.message);
   }
 };
 
-function showResult(result) {
+function showLiveResult(result) {
   if (!result) return;
   const runName = result.runDir.split(/[\\/]/).slice(-1)[0];
-  const link = (file, label) => `/runs/${runName}/${file}`;
   $("result").innerHTML = `
     <div>帧数：${result.frames}</div>
-    <a href="${link("raw_video.mp4")}" target="_blank">原始视频</a>
-    <a href="${link("annotated_tracking.mp4")}" target="_blank">标注视频</a>
-    <a href="${link("pendulum_tracking_wide.csv")}" target="_blank">宽表 CSV</a>
-    <a href="${link("pendulum_tracking_long.csv")}" target="_blank">长表 CSV</a>
-    <a href="${link("angle_timeseries.png")}" target="_blank">角度曲线</a>
+    <a href="/runs/${runName}/annotated_tracking.mp4" target="_blank">标注视频</a>
+    <a href="/runs/${runName}/pendulum_tracking_wide.csv" target="_blank">宽表 CSV</a>
+    <a href="/runs/${runName}/pendulum_tracking_long.csv" target="_blank">长表 CSV</a>
+    <a href="/runs/${runName}/angle_timeseries.png" target="_blank">角度曲线</a>
   `;
 }
 
-function startPolling() {
+function startLivePolling() {
   if (statusTimer) return;
   statusTimer = setInterval(async () => {
     try {
       const status = await api("/api/status");
       frameSize = status.frameSize || frameSize;
-      $("recBadge").textContent = status.recording ? "REC" : "READY";
+      $("recBadge").textContent = status.recording ? "REC" : activePanel === "offline" ? "OFFLINE" : "READY";
       $("recBadge").classList.toggle("recording", status.recording);
       $("fpsText").textContent = `实际 FPS: ${status.actualFps || "--"}`;
       if (status.error) setStatus(status.error);
       fitCanvas();
     } catch {
-      // Keep the current screen if polling briefly fails.
+      // Keep current UI state.
     }
   }, 500);
 }
 
 video.onload = fitCanvas;
 window.addEventListener("resize", fitCanvas);
+setPanel("offline");
 setMode("pivot");
+startOfflinePolling();
