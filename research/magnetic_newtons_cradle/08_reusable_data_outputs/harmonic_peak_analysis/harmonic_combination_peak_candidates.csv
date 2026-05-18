@@ -1,0 +1,25 @@
+﻿case,frequency_Hz,relative_amp,role,candidate_relation,predicted_Hz,abs_error_Hz
+experiment_3cm,1.39584558,1.0,base peak used for test,,,
+experiment_3cm,2.18793255,0.4677960184548457,base peak used for test,,,
+experiment_3cm,3.27359022,0.2515763447093229,candidate primary,,,
+experiment_3cm,4.54757626,0.07624731827494777,candidate primary,,,
+experiment_3cm,5.9323437,0.05203423670717548,candidate primary,,,
+model_3cm_scale0p5_highres,2.36666667,1.0,base peak used for test,2f1,2.4,0.03333333000000005
+model_3cm_scale0p5_highres,1.41666667,0.7804769134556457,base peak used for test,,,
+model_3cm_scale0p5_highres,3.56666667,0.6230551164214674,nonlinear derived candidate,f1+f3,3.56666667,0.0
+model_3cm_scale0p5_highres,1.2,0.34160705590767787,base peak used for test,|f3-f1|,1.16666667,0.03333333000000005
+model_3cm_scale0p5_highres,3.5,0.20414910446579793,nonlinear derived candidate,f1+f3,3.56666667,0.06666667000000004
+model_3cm_scale0p5_highres,2.41666667,0.17638723528345,nonlinear derived candidate,2f1,2.4,0.016666670000000217
+model_3cm_scale0p5_highres,4.88333333,0.1450072085079151,nonlinear derived candidate,4f1,4.8,0.08333333000000032
+model_3cm_scale0p5_highres,1.3,0.1400629222057662,candidate primary,,,
+model_3cm_scale0p5_highres,2.5,0.11609469600849706,candidate primary,,,
+model_3cm_scale0p5_highres,5.91666667,0.11010491399512715,candidate primary,,,
+model_3cm_scale0p5_highres,3.65,0.10391769516736916,nonlinear derived candidate,3f1,3.5999999999999996,0.050000000000000266
+model_3cm_scale0p5_highres,1.15,0.0975131975570161,nonlinear derived candidate,|f3-f1|,1.16666667,0.016666669999999995
+model_3cm_scale0p5_highres,3.43333333,0.07253465397407173,candidate primary,,,
+model_3cm_scale0p5_highres,4.7,0.06393709932523599,nonlinear derived candidate,2f3,4.73333334,0.033333339999999545
+model_3cm_physical_preset,1.4,1.0,base peak used for test,,,
+model_3cm_physical_preset,2.2,0.9973597526105447,base peak used for test,,,
+model_3cm_physical_preset,3.4,0.6162511717940414,candidate primary,,,
+model_3cm_physical_preset,5.8,0.20738935612022885,candidate primary,,,
+model_3cm_physical_preset,4.6,0.16711756791447574,candidate primary,,,

@@ -15,5 +15,20 @@ videos/
 *.png
 *.log
 
+!research/
+!research/**
+research/**/__pycache__/
+research/**/*.pyc
+research/**/*.class
+research/**/*.status
+research/**/*.recovery
+research/**/*.mph
+research/**/*.mp4
+research/**/*.avi
+research/**/*.mov
+research/**/*.mkv
+research/**/*.opju
+research/**/*.log
+
 .DS_Store
 Thumbs.db

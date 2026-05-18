@@ -1,0 +1,317 @@
+{
+  "source": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\06_sources\\new_swing_bob4.xlsx",
+  "duration_s": 180.5190399999674,
+  "sample_rate_Hz": 59.916117435600995,
+  "tracked_bobs": [
+    "bob1",
+    "bob2",
+    "bob3",
+    "bob4",
+    "bob5"
+  ],
+  "cleaning": [
+    {
+      "label": "bob1",
+      "samples": 5673,
+      "radius_proxy_tracker_units": 0.010253874805719803,
+      "spike_count": 2,
+      "removed_drift_range_proxy_units": 0.17520782043511557
+    },
+    {
+      "label": "bob2",
+      "samples": 10822,
+      "radius_proxy_tracker_units": 0.006817168685610622,
+      "spike_count": 13,
+      "removed_drift_range_proxy_units": 0.2923718266991592
+    },
+    {
+      "label": "bob3",
+      "samples": 10822,
+      "radius_proxy_tracker_units": 0.006616009787999599,
+      "spike_count": 0,
+      "removed_drift_range_proxy_units": 0.29901503457265133
+    },
+    {
+      "label": "bob4",
+      "samples": 10822,
+      "radius_proxy_tracker_units": 0.006968863935773149,
+      "spike_count": 0,
+      "removed_drift_range_proxy_units": 0.924896498250698
+    },
+    {
+      "label": "bob5",
+      "samples": 10822,
+      "radius_proxy_tracker_units": 0.009070015531434245,
+      "spike_count": 2,
+      "removed_drift_range_proxy_units": 0.3873312827065646
+    }
+  ],
+  "dominant_frequency_peaks": {
+    "bob1": [
+      {
+        "f_Hz": 1.3958455758316957,
+        "amp": 0.28102637421667404
+      },
+      {
+        "f_Hz": 2.1879325494187296,
+        "amp": 0.24032075245228796
+      },
+      {
+        "f_Hz": 1.4013846455770596,
+        "amp": 0.17084134351343874
+      },
+      {
+        "f_Hz": 2.1934716191640935,
+        "amp": 0.13321809358731723
+      },
+      {
+        "f_Hz": 1.3903065060863318,
+        "amp": 0.12619346827210218
+      },
+      {
+        "f_Hz": 2.1823934796733657,
+        "amp": 0.1067292387424507
+      }
+    ],
+    "bob2": [
+      {
+        "f_Hz": 1.3958455758316957,
+        "amp": 0.4618845703336345
+      },
+      {
+        "f_Hz": 1.4013846455770596,
+        "amp": 0.28288094038786354
+      },
+      {
+        "f_Hz": 2.1879325494187296,
+        "amp": 0.20695622799671692
+      },
+      {
+        "f_Hz": 1.3903065060863318,
+        "amp": 0.2064702057656896
+      },
+      {
+        "f_Hz": 2.1934716191640935,
+        "amp": 0.11755556159993269
+      },
+      {
+        "f_Hz": 2.1823934796733657,
+        "amp": 0.09212421942171438
+      }
+    ],
+    "bob3": [
+      {
+        "f_Hz": 1.3958455758316957,
+        "amp": 0.4969997091134186
+      },
+      {
+        "f_Hz": 1.4013846455770596,
+        "amp": 0.3029995672237176
+      },
+      {
+        "f_Hz": 1.3903065060863318,
+        "amp": 0.22187380456526645
+      },
+      {
+        "f_Hz": 3.2735902195100484,
+        "amp": 0.17274141922908656
+      },
+      {
+        "f_Hz": 3.2680511497646845,
+        "amp": 0.14074016517641133
+      },
+      {
+        "f_Hz": 3.2791292892554122,
+        "amp": 0.04997127482635018
+      }
+    ],
+    "bob4": [
+      {
+        "f_Hz": 1.3958455758316957,
+        "amp": 0.4571099359975172
+      },
+      {
+        "f_Hz": 1.4013846455770596,
+        "amp": 0.27889932757229996
+      },
+      {
+        "f_Hz": 1.3903065060863318,
+        "amp": 0.2051700996181386
+      },
+      {
+        "f_Hz": 2.1879325494187296,
+        "amp": 0.20252603474653189
+      },
+      {
+        "f_Hz": 2.1934716191640935,
+        "amp": 0.11475584220294892
+      },
+      {
+        "f_Hz": 2.1823934796733657,
+        "amp": 0.09104475238583457
+      }
+    ],
+    "bob5": [
+      {
+        "f_Hz": 1.3958455758316957,
+        "amp": 0.328989737398867
+      },
+      {
+        "f_Hz": 2.1879325494187296,
+        "amp": 0.2967292791958233
+      },
+      {
+        "f_Hz": 1.4013846455770596,
+        "amp": 0.19861968285950538
+      },
+      {
+        "f_Hz": 2.1934716191640935,
+        "amp": 0.16587926686991175
+      },
+      {
+        "f_Hz": 1.3903065060863318,
+        "amp": 0.14906194331183886
+      },
+      {
+        "f_Hz": 2.1823934796733657,
+        "amp": 0.133293557384653
+      }
+    ]
+  },
+  "response_metrics": [
+    {
+      "label": "bob1",
+      "max_rms": 0.8122531555779099,
+      "time_of_max_rms_s": 1.21836999999978,
+      "rms_first_5s_mean": 0.6871364160165215,
+      "rms_30_60s_mean": 0.4102734879160392
+    },
+    {
+      "label": "bob2",
+      "max_rms": 1.0377832791697554,
+      "time_of_max_rms_s": 2.5368799999995417,
+      "rms_first_5s_mean": 0.9223142238781357,
+      "rms_30_60s_mean": 0.5434710310663586
+    },
+    {
+      "label": "bob3",
+      "max_rms": 1.080814151686425,
+      "time_of_max_rms_s": 1.7691399999996804,
+      "rms_first_5s_mean": 0.9591657777943845,
+      "rms_30_60s_mean": 0.5621207174818036
+    },
+    {
+      "label": "bob4",
+      "max_rms": 1.0486443605939721,
+      "time_of_max_rms_s": 0.5173899999999065,
+      "rms_first_5s_mean": 0.9370010662375845,
+      "rms_30_60s_mean": 0.5380341731494757
+    },
+    {
+      "label": "bob5",
+      "max_rms": 0.9809844115817765,
+      "time_of_max_rms_s": 0.5507699999999005,
+      "rms_first_5s_mean": 0.8306567980561399,
+      "rms_30_60s_mean": 0.4895391480967622
+    }
+  ],
+  "peak_interval_metrics": [
+    {
+      "label": "bob1",
+      "peak_count_abs": 434,
+      "mean_peak_interval_s": 0.4156311085449596,
+      "std_peak_interval_s": 0.20616157606900024,
+      "cv_peak_interval": 0.4960205620573739
+    },
+    {
+      "label": "bob2",
+      "peak_count_abs": 465,
+      "mean_peak_interval_s": 0.3865677370688957,
+      "std_peak_interval_s": 0.13424837425106342,
+      "cv_peak_interval": 0.34728292451146053
+    },
+    {
+      "label": "bob3",
+      "peak_count_abs": 394,
+      "mean_peak_interval_s": 0.45840167938923027,
+      "std_peak_interval_s": 0.12822260935317364,
+      "cv_peak_interval": 0.27971670942396226
+    },
+    {
+      "label": "bob4",
+      "peak_count_abs": 456,
+      "mean_peak_interval_s": 0.3958281098900384,
+      "std_peak_interval_s": 0.13817183275056932,
+      "cv_peak_interval": 0.3490702890932977
+    },
+    {
+      "label": "bob5",
+      "peak_count_abs": 374,
+      "mean_peak_interval_s": 0.4816384986594304,
+      "std_peak_interval_s": 0.22506000494090744,
+      "cv_peak_interval": 0.4672799320804477
+    }
+  ],
+  "autocorrelation_metrics": [
+    {
+      "label": "bob1",
+      "autocorr_1e_decay_time_s": 0.1168299999999789,
+      "autocorr_abs_at_10s": 0.665446403895633
+    },
+    {
+      "label": "bob2",
+      "autocorr_1e_decay_time_s": 0.13351999999997588,
+      "autocorr_abs_at_10s": 0.7253652885066648
+    },
+    {
+      "label": "bob3",
+      "autocorr_1e_decay_time_s": 0.13351999999997588,
+      "autocorr_abs_at_10s": 0.6887522743328905
+    },
+    {
+      "label": "bob4",
+      "autocorr_1e_decay_time_s": 0.13351999999997588,
+      "autocorr_abs_at_10s": 0.7183097342858483
+    },
+    {
+      "label": "bob5",
+      "autocorr_1e_decay_time_s": 0.1168299999999789,
+      "autocorr_abs_at_10s": 0.6498572761956233
+    }
+  ],
+  "cross_correlation_lags_vs_bob1": [
+    {
+      "pair": "bob1_to_bob2",
+      "best_lag_s": -2.5034999999995478,
+      "max_abs_crosscorr": -0.8831918195980358
+    },
+    {
+      "pair": "bob1_to_bob3",
+      "best_lag_s": -0.7343599999998673,
+      "max_abs_crosscorr": 0.7322114207004866
+    },
+    {
+      "pair": "bob1_to_bob4",
+      "best_lag_s": -0.7009799999998734,
+      "max_abs_crosscorr": 0.8946325092497579
+    },
+    {
+      "pair": "bob1_to_bob5",
+      "best_lag_s": -0.6842899999998764,
+      "max_abs_crosscorr": 0.9174414053536772
+    }
+  ],
+  "interpretation": [
+    "Five-bob data enables complete time-domain chain analysis.",
+    "Detrended horizontal proxy is used because bob4 has tracking drift and perspective errors.",
+    "Frequency peaks show shared collective modes across all bobs.",
+    "Peak-interval CV and autocorrelation describe time-domain irregularity.",
+    "Energy proxy fraction is useful for relative transfer timing, not absolute energy conservation."
+  ],
+  "outputs": {
+    "cleaned_proxy_csv": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\04_data_outputs\\time_frequency_all_5_bobs\\all_5_bobs_cleaned_detrended_proxy.csv",
+    "frequency_spectrum_csv": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\04_data_outputs\\time_frequency_all_5_bobs\\all_5_bobs_frequency_spectrum.csv",
+    "energy_proxy_fraction_csv": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\04_data_outputs\\time_frequency_all_5_bobs\\all_5_bobs_energy_proxy_fraction.csv",
+    "figure": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\03_key_figures\\all_5_bobs_time_frequency_analysis.png"
+  }
+}

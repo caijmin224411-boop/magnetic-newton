@@ -1,0 +1,48 @@
+﻿Folder PATH listing for volume Windows
+Volume serial number is 12F3-5ED9
+C:\USERS\66\DESKTOP\CUPT\IYPT2026_RESEARCH\15_MAGNETIC_NEWTONS_CRADLE\HANDOFF_FOR_NEXT_WINDOW\MAGNETIC_NEWTONS_CRADLE_USEFUL_SCRIPTS_PACKAGE
+��������00_readme
+��       PACKAGED_README_theory_and_scripts.md
+��       PACKAGE_FILE_TREE.txt
+��       README_HANDOFF.md
+��       README_theory_application_CN.md
+��       �����Աȹ���˵��.md
+��       
+��������01_single_pendulum_calibration
+��       analyze_single_pendulum_xlsx.py
+��       fit_single_pendulum_nonlinear_damping.py
+��       sweep_effective_length_from_tracker.py
+��       
+��������02_magnetic_model_and_force_table
+��       analyze_realistic_field_model.py
+��       DiskMagnetForceTable.java
+��       make_cradle_initial_condition_response_map.py
+��       make_magnetic_pendulum_basin.py
+��       run_force_table_java_5cm_220mT.ps1
+��       
+��������03_experiment_time_frequency_analysis
+��       analyze_time_domain_bobs_1_2_3_5.py
+��       analyze_time_frequency_all_5_bobs.py
+��       analyze_time_frequency_spacing_5cm.py
+��       clean_and_compare_new_swing_3cm_70mT.py
+��       
+��������04_model_experiment_comparison
+��       compare_tracker_with_model_pil.py
+��       parameter_compare_gui.py
+��       ��������Աȹ���.bat
+��       
+��������05_document_generation
+��       build_magnetic_newtons_cradle_ppt.ps1
+��       build_theory_formula_docx.py
+��       build_theory_formula_pptx.js
+��       
+��������06_key_outputs
+        all_5_bobs_time_frequency_analysis.png
+        all_5_bobs_time_frequency_summary.json
+        model_coupling_check_summary.json
+        model_vs_experiment_frequency_error.csv
+        single_pendulum_nonlinear_damping_fit.png
+        single_pendulum_nonlinear_damping_summary.json
+        spacing_5cm_time_frequency_analysis.png
+        spacing_5cm_time_frequency_summary.json
+        

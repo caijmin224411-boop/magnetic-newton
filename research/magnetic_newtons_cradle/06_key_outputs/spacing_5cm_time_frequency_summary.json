@@ -1,0 +1,316 @@
+{
+  "spacing_cm": 5.0,
+  "duration_s": 139.17764000001398,
+  "sample_rate_Hz": 120.04801920767102,
+  "source_mapping": {
+    "bob1": "spacing5cm_bob1.txt",
+    "bob2": "spacing5cm_bob2.txt",
+    "bob3": "spacing5cm_all.xlsx Sheet1 A",
+    "bob4": "spacing5cm_all.xlsx Sheet1 B",
+    "bob5": "spacing5cm_all.xlsx Sheet1 C"
+  },
+  "cleaning": [
+    {
+      "label": "bob1",
+      "radius_proxy": 75.97636206903073,
+      "spike_count": 0,
+      "drift_range": 0.12279055483612712
+    },
+    {
+      "label": "bob2",
+      "radius_proxy": 53.945468357296065,
+      "spike_count": 0,
+      "drift_range": 0.05292964768354801
+    },
+    {
+      "label": "bob3",
+      "radius_proxy": 51.028103050403374,
+      "spike_count": 0,
+      "drift_range": 0.03444555499997198
+    },
+    {
+      "label": "bob4",
+      "radius_proxy": 53.866995292440606,
+      "spike_count": 0,
+      "drift_range": 0.0349627245778898
+    },
+    {
+      "label": "bob5",
+      "radius_proxy": 71.33097000053782,
+      "spike_count": 1,
+      "drift_range": 0.1228744305118498
+    }
+  ],
+  "dominant_frequency_peaks": {
+    "bob1": [
+      {
+        "f_Hz": 1.846450471983449,
+        "amp": 0.3056632936857694
+      },
+      {
+        "f_Hz": 1.853635104170155,
+        "amp": 0.21723456607748154
+      },
+      {
+        "f_Hz": 1.3866340120342633,
+        "amp": 0.19025301990715343
+      },
+      {
+        "f_Hz": 2.5433597940939334,
+        "amp": 0.1579276161719672
+      },
+      {
+        "f_Hz": 1.3794493798475571,
+        "amp": 0.1495839358155669
+      },
+      {
+        "f_Hz": 1.839265839796743,
+        "amp": 0.13557474050300047
+      }
+    ],
+    "bob2": [
+      {
+        "f_Hz": 1.3866340120342633,
+        "amp": 0.27872794740224976
+      },
+      {
+        "f_Hz": 1.846450471983449,
+        "amp": 0.23840611413264284
+      },
+      {
+        "f_Hz": 1.3794493798475571,
+        "amp": 0.21926290413186364
+      },
+      {
+        "f_Hz": 1.853635104170155,
+        "amp": 0.16932513852852582
+      },
+      {
+        "f_Hz": 3.3695924955651266,
+        "amp": 0.1202918014386799
+      },
+      {
+        "f_Hz": 1.3938186442209692,
+        "amp": 0.11981767724591205
+      }
+    ],
+    "bob3": [
+      {
+        "f_Hz": 1.3866340120342633,
+        "amp": 0.2992673982573653
+      },
+      {
+        "f_Hz": 2.5433597940939334,
+        "amp": 0.24670979268644266
+      },
+      {
+        "f_Hz": 1.3794493798475571,
+        "amp": 0.23526978274983576
+      },
+      {
+        "f_Hz": 2.5505444262806396,
+        "amp": 0.1882423850266494
+      },
+      {
+        "f_Hz": 1.3938186442209692,
+        "amp": 0.12839565422719354
+      },
+      {
+        "f_Hz": 2.5361751619072277,
+        "amp": 0.10559602227406965
+      }
+    ],
+    "bob4": [
+      {
+        "f_Hz": 1.3866340120342633,
+        "amp": 0.2709083407731717
+      },
+      {
+        "f_Hz": 1.846450471983449,
+        "amp": 0.21704761584406682
+      },
+      {
+        "f_Hz": 1.3794493798475571,
+        "amp": 0.2133563220746661
+      },
+      {
+        "f_Hz": 1.853635104170155,
+        "amp": 0.15436786045193843
+      },
+      {
+        "f_Hz": 2.5433597940939334,
+        "amp": 0.12408000280989195
+      },
+      {
+        "f_Hz": 3.3695924955651266,
+        "amp": 0.12059431088413132
+      }
+    ],
+    "bob5": [
+      {
+        "f_Hz": 1.846450471983449,
+        "amp": 0.31248944546475577
+      },
+      {
+        "f_Hz": 1.853635104170155,
+        "amp": 0.2204382483594666
+      },
+      {
+        "f_Hz": 1.3866340120342633,
+        "amp": 0.18572222416899434
+      },
+      {
+        "f_Hz": 2.5433597940939334,
+        "amp": 0.1558342675798455
+      },
+      {
+        "f_Hz": 1.3794493798475571,
+        "amp": 0.14652180232848164
+      },
+      {
+        "f_Hz": 1.839265839796743,
+        "amp": 0.14008246451229142
+      }
+    ]
+  },
+  "response_metrics": [
+    {
+      "label": "bob1",
+      "max_rms": 1.1313939121969327,
+      "time_of_max_rms_s": 4.189990000000421,
+      "rms_first_5s_mean": 0.8426419003633594,
+      "rms_30_60s_mean": 0.42516628657584143,
+      "rms_90_120s_mean": 0.10904961558334686,
+      "rms_30_60_over_first_5": 0.5045634288925148,
+      "rms_90_120_over_first_5": 0.1294139486018
+    },
+    {
+      "label": "bob2",
+      "max_rms": 1.2200640198757862,
+      "time_of_max_rms_s": 2.0158600000002025,
+      "rms_first_5s_mean": 0.9174327158607535,
+      "rms_30_60s_mean": 0.43725933306944226,
+      "rms_90_120s_mean": 0.11211534979732324,
+      "rms_30_60_over_first_5": 0.4766118817325987,
+      "rms_90_120_over_first_5": 0.12220552838268298
+    },
+    {
+      "label": "bob3",
+      "max_rms": 1.055373219822328,
+      "time_of_max_rms_s": 0.7497000000000753,
+      "rms_first_5s_mean": 0.8945484425577453,
+      "rms_30_60s_mean": 0.4450637426583576,
+      "rms_90_120s_mean": 0.11468583752090752,
+      "rms_30_60_over_first_5": 0.49752894475541787,
+      "rms_90_120_over_first_5": 0.12820528443713014
+    },
+    {
+      "label": "bob4",
+      "max_rms": 1.1661169430654765,
+      "time_of_max_rms_s": 1.124550000000113,
+      "rms_first_5s_mean": 0.8672250487535281,
+      "rms_30_60s_mean": 0.4315642243293772,
+      "rms_90_120s_mean": 0.11024940408883739,
+      "rms_30_60_over_first_5": 0.49763809861081515,
+      "rms_90_120_over_first_5": 0.12712894334325334
+    },
+    {
+      "label": "bob5",
+      "max_rms": 1.1473875792631179,
+      "time_of_max_rms_s": 0.9496200000000954,
+      "rms_first_5s_mean": 0.8453085240387734,
+      "rms_30_60s_mean": 0.42812225486169364,
+      "rms_90_120s_mean": 0.1088046955249789,
+      "rms_30_60_over_first_5": 0.5064686356363491,
+      "rms_90_120_over_first_5": 0.1287159568735026
+    }
+  ],
+  "peak_interval_metrics": [
+    {
+      "label": "bob1",
+      "peak_count_abs": 269,
+      "mean_peak_interval_s": 0.4846630223881084,
+      "std_peak_interval_s": 0.33114771707629576,
+      "cv_peak_interval": 0.6832535220958519
+    },
+    {
+      "label": "bob2",
+      "peak_count_abs": 264,
+      "mean_peak_interval_s": 0.5019854372624079,
+      "std_peak_interval_s": 0.2501263053146804,
+      "cv_peak_interval": 0.49827402698921197
+    },
+    {
+      "label": "bob3",
+      "peak_count_abs": 268,
+      "mean_peak_interval_s": 0.49056524344574215,
+      "std_peak_interval_s": 0.24395451840542093,
+      "cv_peak_interval": 0.49729270808481757
+    },
+    {
+      "label": "bob4",
+      "peak_count_abs": 248,
+      "mean_peak_interval_s": 0.5370995141700944,
+      "std_peak_interval_s": 0.278760824749756,
+      "cv_peak_interval": 0.5190115004674442
+    },
+    {
+      "label": "bob5",
+      "peak_count_abs": 261,
+      "mean_peak_interval_s": 0.49002826923081844,
+      "std_peak_interval_s": 0.3475852013089047,
+      "cv_peak_interval": 0.7093166315782107
+    }
+  ],
+  "autocorrelation_metrics": [
+    {
+      "label": "bob1",
+      "autocorr_1e_decay_time_s": 0.10829000000001088,
+      "autocorr_abs_at_10s": 0.5066675939109342
+    },
+    {
+      "label": "bob2",
+      "autocorr_1e_decay_time_s": 0.11662000000001171,
+      "autocorr_abs_at_10s": 0.15473902088591152
+    },
+    {
+      "label": "bob3",
+      "autocorr_1e_decay_time_s": 0.10829000000001088,
+      "autocorr_abs_at_10s": 0.08067039508205298
+    },
+    {
+      "label": "bob4",
+      "autocorr_1e_decay_time_s": 0.10829000000001088,
+      "autocorr_abs_at_10s": 0.15218065138545192
+    },
+    {
+      "label": "bob5",
+      "autocorr_1e_decay_time_s": 0.10829000000001088,
+      "autocorr_abs_at_10s": 0.5229568554722362
+    }
+  ],
+  "cross_correlation_lags_vs_bob1": [
+    {
+      "pair": "bob1_to_bob2",
+      "best_lag_s": 2.1658000000002176,
+      "max_abs_crosscorr": 0.8700064835990564
+    },
+    {
+      "pair": "bob1_to_bob3",
+      "best_lag_s": 0.358190000000036,
+      "max_abs_crosscorr": -0.6351368591975292
+    },
+    {
+      "pair": "bob1_to_bob4",
+      "best_lag_s": 2.9321600000002945,
+      "max_abs_crosscorr": 0.825450427808465
+    },
+    {
+      "pair": "bob1_to_bob5",
+      "best_lag_s": 0.7746900000000778,
+      "max_abs_crosscorr": 0.9136668034563842
+    }
+  ],
+  "summary": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\04_data_outputs\\time_frequency_spacing_5cm\\spacing_5cm_time_frequency_summary.json",
+  "figure": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\03_key_figures\\spacing_5cm_time_frequency_analysis.png"
+}
