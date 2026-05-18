@@ -1,0 +1,25 @@
+{
+  "source": "C:\\Users\\66\\Desktop\\niudundanbai.xlsx",
+  "sample_count": 6358,
+  "duration_s": 132.56430000006375,
+  "sample_rate_Hz": 47.96163069542058,
+  "circle_center_tracker_units": [
+    0.11289665759189245,
+    1.3801065492275544
+  ],
+  "circle_radius_tracker_units": 2.4031741739760335,
+  "circle_residual_rms_tracker_units": 0.0039010194292322994,
+  "dominant_frequency_Hz": 1.4179566867021651,
+  "period_s": 0.7052401595748073,
+  "length_from_frequency_m": 0.12359000241498568,
+  "length_from_frequency_cm": 12.359000241498567,
+  "beta_peak_1_per_s": 0.020463892439402425,
+  "beta_trough_1_per_s": 0.02054231342790279,
+  "beta_mean_1_per_s": 0.02050310293365261,
+  "mass_kg_for_damping": 0.07,
+  "damping_torque_coefficient_N_m_s": 4.384441796170737e-05,
+  "quality_factor": 217.26673881836945,
+  "theta_csv": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\04_data_outputs\\single_pendulum_calibration\\single_pendulum_theta.csv",
+  "spectrum_csv": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\04_data_outputs\\single_pendulum_calibration\\single_pendulum_frequency_spectrum.csv",
+  "figure": "C:\\Users\\66\\Desktop\\cupt\\IYPT2026_Research\\15_Magnetic_Newtons_cradle\\handoff_for_next_window\\03_key_figures\\single_pendulum_calibration_time_frequency.png"
+}
